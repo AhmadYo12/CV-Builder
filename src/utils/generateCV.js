@@ -1,237 +1,180 @@
-import jsPDF from 'jspdf';
+const labels = {
+  en: {
+    summary: 'PROFESSIONAL SUMMARY', experience: 'WORK EXPERIENCE',
+    education: 'EDUCATION', skills: 'SKILLS', projects: 'PROJECTS', languages: 'LANGUAGES',
+  },
+  ar: {
+    summary: 'الملخص المهني', experience: 'الخبرات العملية',
+    education: 'التعليم', skills: 'المهارات', projects: 'المشاريع', languages: 'اللغات',
+  },
+};
 
-export const generateCV = () => {
-  const doc = new jsPDF();
-  const pageWidth = doc.internal.pageSize.getWidth();
-  let y = 20;
+function buildHTML(data, lang) {
+  const isAr = lang === 'ar';
+  const lbl = labels[lang];
+  const dir = isAr ? 'rtl' : 'ltr';
+  const fontFamily = isAr ? "'Cairo', sans-serif" : "'Helvetica Neue', Arial, sans-serif";
+  const googleFont = isAr
+    ? '<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">'
+    : '';
 
-  // Header - Name
-  doc.setFillColor(240, 240, 240);
-  doc.rect(0, 0, pageWidth, 28, 'F');
-  doc.setTextColor(0, 0, 0);
-  doc.setFontSize(26);
-  doc.setFont(undefined, 'bold');
-  doc.text('AHMAD YOUSEF', pageWidth / 2, 15, { align: 'center' });
-  doc.setFontSize(12);
-  doc.setFont(undefined, 'normal');
-  doc.text('Frontend & Mobile Developer | Software Project Manager', pageWidth / 2, 22, { align: 'center' });
+  const section = (title, content) => `
+    <div class="section">
+      <div class="section-title">${title}</div>
+      ${content}
+    </div>`;
 
-  y = 35;
-  doc.setTextColor(0, 0, 0);
+  const row = (bold, sub) => `
+    <div class="row">
+      <div class="row-bold">${bold || ''}</div>
+      ${sub ? `<div class="row-sub">${sub}</div>` : ''}
+    </div>`;
 
-  // Contact Info
-  doc.setFontSize(9);
-  const contact = 'ahmadyo8643@gmail.com | GitHub: AhmadYo12 | LinkedIn: ahmad-yousef-65243538a';
-  doc.text(contact, pageWidth / 2, y, { align: 'center' });
-  y += 12;
+  const para = (text) =>
+    `<div class="para">${(text || '').replace(/\n/g, '<br/>')}</div>`;
 
-  // Professional Summary
-  doc.setFontSize(13);
-  doc.setFont(undefined, 'bold');
-  doc.setTextColor(0, 0, 0);
-  doc.text('PROFESSIONAL SUMMARY', 15, y);
-  y += 6;
-  doc.setDrawColor(0, 0, 0);
-  doc.setLineWidth(0.5);
-  doc.line(15, y, 195, y);
-  y += 6;
-  doc.setFontSize(9);
-  doc.setFont(undefined, 'normal');
-  doc.setTextColor(0, 0, 0);
-  const summary = doc.splitTextToSize(
-    'Computer Engineer at Damascus University with three years of experience in web and mobile application development. Specializing in creating modern, responsive web applications and mobile apps using React.js, React Native, and cutting-edge technologies. Experienced in software project management and software engineering, having led the development of Match Up and Dento projects.',
-    170
-  );
-  doc.text(summary, 15, y);
-  y += summary.length * 4 + 8;
+  const contactParts = [
+    data.email, data.phone, data.location,
+    data.github ? `GitHub: ${data.github}` : '',
+    data.linkedin ? `LinkedIn: ${data.linkedin}` : '',
+  ].filter(Boolean).join(' | ');
 
-  // Work Experience
-  doc.setFontSize(13);
-  doc.setFont(undefined, 'bold');
-  doc.setTextColor(0, 0, 0);
-  doc.text('WORK EXPERIENCE', 15, y);
-  y += 6;
-  doc.setLineWidth(0.5);
-  doc.line(15, y, 195, y);
-  y += 8;
+  let body = '';
 
-  // Job 1
-  doc.setFontSize(11);
-  doc.setTextColor(0, 0, 0);
-  doc.text('Front-end Developer', 15, y);
-  doc.setFontSize(9);
-  doc.setFont(undefined, 'normal');
-  doc.text('MKAYO Team | 2023 - Present', 15, y + 5);
-  y += 10;
-  doc.setFontSize(9);
-  const job1Desc = doc.splitTextToSize(
-    'Working as a front-end developer specializing in React.js development and modern web technologies.',
-    170
-  );
-  doc.text(job1Desc, 15, y);
-  y += job1Desc.length * 4 + 6;
+  if (data.summary)
+    body += section(lbl.summary, para(data.summary));
 
-  // Job 2
-  doc.setFontSize(11);
-  doc.setFont(undefined, 'bold');
-  doc.text('Front-End & Mobile App Developer', 15, y);
-  doc.setFontSize(9);
-  doc.setFont(undefined, 'normal');
-  doc.text('Freelance | 2023 - Present', 15, y + 5);
-  y += 10;
-  doc.setFontSize(9);
-  const job2Desc = doc.splitTextToSize(
-    'Working on front-end web projects and mobile application development using React.js and React Native.',
-    170
-  );
-  doc.text(job2Desc, 15, y);
-  y += job2Desc.length * 4 + 8;
+  if (data.experience?.some((e) => e.role || e.company)) {
+    const items = data.experience
+      .filter((e) => e.role || e.company)
+      .map((e) =>
+        row(e.role, `${e.company || ''}${e.period ? ' | ' + e.period : ''}`) +
+        (e.description ? para(e.description) : ''))
+      .join('');
+    body += section(lbl.experience, items);
+  }
 
-  // Job 3
-  doc.setFontSize(11);
-  doc.setFont(undefined, 'bold');
-  doc.text('Project Manager & Software Engineer', 15, y);
-  doc.setFontSize(9);
-  doc.setFont(undefined, 'normal');
-  doc.text('Match Up & Dento | 2025 - Present', 15, y + 5);
-  y += 10;
-  const job3Desc = doc.splitTextToSize(
-    'Leading the development and management of Match Up and Dento projects. Responsible for software architecture, team coordination, sprint planning, and ensuring delivery of high-quality software solutions.',
-    170
-  );
-  doc.text(job3Desc, 15, y);
-  y += job3Desc.length * 4 + 8;
+  if (data.education?.some((e) => e.degree || e.school)) {
+    const items = data.education
+      .filter((e) => e.degree || e.school)
+      .map((e) => row(e.degree, `${e.school || ''}${e.year ? ' | ' + e.year : ''}`))
+      .join('');
+    body += section(lbl.education, items);
+  }
 
-  // Technical Skills
-  doc.setFontSize(13);
-  doc.setFont(undefined, 'bold');
-  doc.setTextColor(0, 0, 0);
-  doc.text('TECHNICAL SKILLS', 15, y);
-  y += 6;
-  doc.setLineWidth(0.5);
-  doc.line(15, y, 195, y);
-  y += 8;
+  if (data.skills)
+    body += section(lbl.skills, para(data.skills));
 
-  doc.setFontSize(10);
-  doc.setTextColor(0, 0, 0);
-  doc.text('Programming Languages:', 15, y);
-  doc.setFontSize(9);
-  doc.setFont(undefined, 'normal');
-  doc.text('JavaScript, TypeScript, Java, C++, C', 15, y + 4);
-  y += 11;
+  if (data.projects?.some((p) => p.name)) {
+    const items = data.projects
+      .filter((p) => p.name)
+      .map((p) => row(p.name) + (p.description ? para(p.description) : ''))
+      .join('');
+    body += section(lbl.projects, items);
+  }
 
-  doc.setFontSize(10);
-  doc.setFont(undefined, 'bold');
-  doc.text('Frameworks & Libraries:', 15, y);
-  doc.setFontSize(9);
-  doc.setFont(undefined, 'normal');
-  const frameworks = doc.splitTextToSize(
-    'React.js, React Native, React Router, Tailwind CSS, Redux, Context API, Axios',
-    170
-  );
-  doc.text(frameworks, 15, y + 4);
-  y += frameworks.length * 4 + 7;
+  if (data.languages)
+    body += section(lbl.languages, para(data.languages));
 
-  doc.setFontSize(10);
-  doc.setFont(undefined, 'bold');
-  doc.text('Tools & Technologies:', 15, y);
-  doc.setFontSize(9);
-  doc.setFont(undefined, 'normal');
-  doc.text('VS Code, Git, GitHub, GitLab, Firebase, Arduino, ESP32, IoT', 15, y + 4);
-  y += 11;
+  return `<!DOCTYPE html>
+<html dir="${dir}" lang="${lang}">
+<head>
+  <meta charset="UTF-8"/>
+  ${googleFont}
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
 
-  // Key Projects
-  doc.setFontSize(13);
-  doc.setFont(undefined, 'bold');
-  doc.setTextColor(0, 0, 0);
-  doc.text('KEY PROJECTS', 15, y);
-  y += 6;
-  doc.setLineWidth(0.5);
-  doc.line(15, y, 195, y);
-  y += 8;
+    body {
+      font-family: ${fontFamily};
+      direction: ${dir};
+      background: #fff;
+      color: #1e293b;
+      font-size: ${isAr ? '15px' : '13px'};
+    }
 
-  // Project 1
-  doc.setFontSize(10);
-  doc.setTextColor(0, 0, 0);
-  doc.text('Working Hours Management System', 15, y);
-  doc.setFontSize(9);
-  doc.setFont(undefined, 'normal');
-  const proj1 = doc.splitTextToSize(
-    'Employee attendance management system with real-time tracking, shift scheduling, and comprehensive reporting dashboard using React.js and Firebase.',
-    170
-  );
-  doc.text(proj1, 15, y + 4);
-  y += proj1.length * 4 + 7;
+    .header {
+      background: #1e293b;
+      color: #fff;
+      padding: 24px 32px;
+      text-align: center;
+    }
+    .header-name {
+      font-size: ${isAr ? '28px' : '24px'};
+      font-weight: 700;
+      letter-spacing: ${isAr ? '0' : '1px'};
+      margin-bottom: 5px;
+    }
+    .header-title {
+      font-size: ${isAr ? '16px' : '13px'};
+      opacity: 0.85;
+      margin-bottom: 6px;
+    }
+    .header-contact {
+      font-size: ${isAr ? '13px' : '10px'};
+      opacity: 0.7;
+    }
 
-  // Project 2
-  doc.setFontSize(10);
-  doc.setFont(undefined, 'bold');
-  doc.text('Smart University Entry System', 15, y);
-  doc.setFontSize(9);
-  doc.setFont(undefined, 'normal');
-  const proj2 = doc.splitTextToSize(
-    'Intelligent access control system for university campuses with real-time monitoring and automated student authentication using React.js, Arduino Uno, ESP32, and ThingSpeak.',
-    170
-  );
-  doc.text(proj2, 15, y + 4);
-  y += proj2.length * 4 + 7;
+    .body { padding: 24px 32px; }
 
-  // Project 3
-  doc.setFontSize(10);
-  doc.setFont(undefined, 'bold');
-  doc.text('Match Up - Sports Field Booking App', 15, y);
-  doc.setFontSize(9);
-  doc.setFont(undefined, 'normal');
-  const proj3 = doc.splitTextToSize(
-    'Mobile application for booking sports fields in Syria (football, basketball, tennis, padel, volleyball, handball) built with React Native and Laravel.',
-    170
-  );
-  doc.text(proj3, 15, y + 4);
-  y += proj3.length * 4 + 7;
+    .section { margin-bottom: 20px; }
 
-  // Project 4
-  doc.setFontSize(10);
-  doc.setFont(undefined, 'bold');
-  doc.text('FER_AI - Facial Expression Recognition', 15, y);
-  doc.setFontSize(9);
-  doc.setFont(undefined, 'normal');
-  const proj4 = doc.splitTextToSize(
-    'AI-powered facial expression recognition system for emotion detection and analysis using Python, Computer Vision, and Machine Learning algorithms.',
-    170
-  );
-  doc.text(proj4, 15, y + 4);
-  y += proj4.length * 4 + 7;
+    .section-title {
+      font-size: ${isAr ? '15px' : '12px'};
+      font-weight: 700;
+      color: #1e293b;
+      border-bottom: 1.5px solid #94a3b8;
+      padding-bottom: 4px;
+      margin-bottom: 10px;
+      text-transform: ${isAr ? 'none' : 'uppercase'};
+    }
 
-  // Project 5
-  doc.setFontSize(10);
-  doc.setFont(undefined, 'bold');
-  doc.text('Dento - Dental Lab E-Commerce Platform', 15, y);
-  doc.setFontSize(9);
-  doc.setFont(undefined, 'normal');
-  const proj5 = doc.splitTextToSize(
-    'E-commerce platform connecting dental laboratories with dentists, featuring product catalog, ordering system, and inventory management.',
-    170
-  );
-  doc.text(proj5, 15, y + 4);
-  y += proj5.length * 4 + 8;
+    .row { margin-bottom: 8px; }
+    .row-bold {
+      font-size: ${isAr ? '15px' : '12px'};
+      font-weight: 700;
+      color: #1e293b;
+    }
+    .row-sub {
+      font-size: ${isAr ? '13px' : '10px'};
+      color: #64748b;
+      margin-top: 2px;
+    }
 
-  // Education
-  doc.setFontSize(13);
-  doc.setFont(undefined, 'bold');
-  doc.setTextColor(0, 0, 0);
-  doc.text('EDUCATION', 15, y);
-  y += 6;
-  doc.setLineWidth(0.5);
-  doc.line(15, y, 195, y);
-  y += 8;
+    .para {
+      font-size: ${isAr ? '14px' : '11px'};
+      color: #374151;
+      line-height: 1.7;
+      margin-bottom: 6px;
+    }
 
-  doc.setFontSize(10);
-  doc.setTextColor(0, 0, 0);
-  doc.text('Computer Engineering', 15, y);
-  doc.setFontSize(9);
-  doc.setFont(undefined, 'normal');
-  doc.text('Damascus University', 15, y + 4);
+    @media print {
+      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      @page { margin: 0; size: A4; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="header-name">${data.name || ''}</div>
+    <div class="header-title">${data.title || ''}</div>
+    <div class="header-contact">${contactParts}</div>
+  </div>
+  <div class="body">${body}</div>
+</body>
+</html>`;
+}
 
-  // Save
-  doc.save('Ahmad_Yousef_CV.pdf');
+export const generateCV = (data, lang = 'en') => {
+  const html = buildHTML(data, lang);
+  const win = window.open('', '_blank', 'width=900,height=700');
+  win.document.write(html);
+  win.document.close();
+
+  // Wait for Cairo font to load then trigger print
+  win.onload = () => {
+    setTimeout(() => {
+      win.focus();
+      win.print();
+    }, 800);
+  };
 };

@@ -1,6 +1,6 @@
 {
-  "short_name": "AhmadYo",
-  "name": "AhmadYo Portfolio",
+  "short_name": "CV Builder",
+  "name": "CV Builder",
   "icons": [
     {
       "src": "favicon.svg",
@@ -10,6 +10,6 @@
   ],
   "start_url": ".",
   "display": "standalone",
-  "theme_color": "#ff3333",
-  "background_color": "#0a0a0a"
+  "theme_color": "#1e293b",
+  "background_color": "#ffffff"
 }
