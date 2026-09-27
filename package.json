@@ -42,7 +42,11 @@
       "last 1 safari version"
     ]
   },
+  "overrides": {
+    "eslint-plugin-jest": "^27.9.0"
+  },
   "devDependencies": {
+    "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
     "ajv": "^7.2.4",
     "autoprefixer": "^10.4.21",
     "postcss": "^8.5.3",
